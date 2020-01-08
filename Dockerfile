@@ -6,11 +6,13 @@ RUN yum install -y wget && \
     wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm && \
     yum install -y ./google-chrome-stable_current_*.rpm && \
     google-chrome --version && \
-    rm -rf *.rpm
+    rm -rf *.rpm \
+    mkdir -p /gopath
 
 # 设置go mod proxy 国内代理
 # 设置golang path
 ENV GOPROXY=https://goproxy.io GOPATH=/gopath PATH="${PATH}:/usr/local/go/bin"
+ENV GOPATH /gopath
 # 定义使用的Golang 版本
 ARG GO_VERSION=1.13.3
 
