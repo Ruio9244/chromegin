@@ -71,6 +71,24 @@ func runChromedp(targetUrl, imagePath string) error {
 	return ioutil.WriteFile(imagePath, buf, 0644)
 }
 
+func runChromedpTest(targetUrl string) ([]byte, error) {
+	// create context
+	// timeout 90 秒
+	timeContext, cancelFunc := context.WithTimeout(context.Background(), time.Second*90)
+	defer cancelFunc()
+
+	ctx, cancel := chromedp.NewContext(timeContext)
+	defer cancel()
+
+	// capture screenshot of an element
+	var buf []byte
+	// capture entire browser viewport, returning png with quality=50
+	if err := chromedp.Run(ctx, fullScreenshot(targetUrl, 90, &buf)); err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
+
 func fullScreenshot(urlstr string, quality int64, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Emulate(device.IPad),

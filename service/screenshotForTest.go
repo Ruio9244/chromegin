@@ -31,10 +31,11 @@ func ChromedpShotTest(c *gin.Context) {
 		return
 	}
 
-	if err := runChromedp(originUrl, imagePath); err != nil {
+	buf, err := runChromedpTest(originUrl)
+	if err != nil {
 		log.WithField("URL", originUrl).WithError(err)
-		c.JSON(200, gin.H{"msg": err.Error()})
+		c.JSON(500, gin.H{"msg": err.Error()})
 		return
 	}
-	c.File(imagePath)
+	c.JSON(200, gin.H{"data": buf})
 }
