@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"context"
@@ -16,57 +16,36 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
-func handleError(c *gin.Context, err error) bool {
-	if err != nil {
-		//logrus.WithError(err).Error("gin context http handler error")
-		c.JSON(200, gin.H{"msg": err.Error()})
-		return true
-	}
-	return false
-}
-func md5Encode(data string) string {
-	h := md5.New()
-	h.Write([]byte(data))
-	return hex.EncodeToString(h.Sum(nil))
-}
 func ChromedpShot(c *gin.Context) {
 	var err error
-	u := c.Query("u")
+	originUrl := c.Query("url")
 	//url decode 参数
-	u, err = url.QueryUnescape(u)
+	originUrl, err = url.QueryUnescape(originUrl)
 	if handleError(c, err) {
 		return
 	}
-	if !strings.HasPrefix(u, "http") {
-		c.JSON(200, gin.H{"msg": u + " 地址无效"})
+	if !strings.HasPrefix(originUrl, "http") {
+		c.JSON(200, gin.H{"msg": originUrl + " 地址无效"})
 		return
 	}
 
-	timeString := c.Query("c")
-	timeString, err = url.QueryUnescape(timeString)
-	if handleError(c, err) {
-		return
-	}
-	t, err := time.Parse("2006-01-02 15:04:05", timeString)
-	if handleError(c, err) {
-		return
-	}
 	//md5 url 和时间信息一起拼接成截图名称.png
-	fileName := fmt.Sprintf("%s_%s.png", t.Format("060102T150405"), md5Encode(u))
+	fileName := fmt.Sprintf("%s.png", md5Encode(originUrl))
 	//imagePath := path.Join(os.TempDir(), fileName)
-	imagePath := path.Join("/data", fileName)
+	imagePath := path.Join("./data", fileName)
 	if _, err := os.Stat(imagePath); os.IsExist(err) {
 		//如果图片存在就直接gin response 图片
 		c.File(imagePath)
 		return
 	}
 
-	if err := runChromedp(u, imagePath); err != nil {
-		log.WithField("URL", u).WithField("C", timeString).WithError(err)
+	if err := runChromedp(originUrl, imagePath); err != nil {
+		log.WithField("URL", originUrl).WithError(err)
 		c.JSON(200, gin.H{"msg": err.Error()})
 		return
 	}
@@ -85,16 +64,17 @@ func runChromedp(targetUrl, imagePath string) error {
 	// capture screenshot of an element
 	var buf []byte
 	// capture entire browser viewport, returning png with quality=50
-	if err := chromedp.Run(ctx, fullScreenshot(targetUrl, 50, &buf)); err != nil {
+	if err := chromedp.Run(ctx, fullScreenshot(targetUrl, 90, &buf)); err != nil {
 		return err
 	}
+	imagePath = filepath.FromSlash(filepath.Join(RootDir(), imagePath))
 	return ioutil.WriteFile(imagePath, buf, 0644)
 }
 
 func fullScreenshot(urlstr string, quality int64, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Emulate(device.IPad),
-		chromedp.EmulateViewport(1024, 2048, chromedp.EmulateScale(2)),
+		chromedp.EmulateViewport(1024, 2048, chromedp.EmulateScale(1)),
 		chromedp.Navigate(urlstr),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			// get layout metrics
@@ -131,4 +111,24 @@ func fullScreenshot(urlstr string, quality int64, res *[]byte) chromedp.Tasks {
 			return nil
 		}),
 	}
+}
+
+func handleError(c *gin.Context, err error) bool {
+	if err != nil {
+		//logrus.WithError(err).Error("gin context http handler error")
+		c.JSON(200, gin.H{"msg": err.Error()})
+		return true
+	}
+	return false
+}
+
+func md5Encode(data string) string {
+	h := md5.New()
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func RootDir() string {
+	wd, _ := os.Getwd()
+	return wd
 }

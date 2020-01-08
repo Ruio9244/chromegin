@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chromegin/router"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -11,20 +12,17 @@ func main() {
 
 	r := gin.New()
 
-	//开发接口
-	{
-		//chromedp run screen shot
-		r.GET("/python/ss", ChromedpShot)
-		r.GET("/open/chromedp/screen/shot", ChromedpShot)
-	}
+	// Recovery middleware recovers from any panics and writes a 500 if there was one.
+	r.Use(gin.Recovery())
 
+	router.UseRouters(r)
 	log.Fatal(r.Run(":6666"))
 }
 
 func init() {
 
 	// open a file
-	f, err := os.OpenFile("/data/golang_chrome_dp.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	f, err := os.OpenFile("/logs/golang_chrome_dp.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Printf("error opening file: %v", err)
 	}
