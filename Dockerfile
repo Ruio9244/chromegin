@@ -6,7 +6,7 @@ RUN yum install -y wget && \
     wget https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm && \
     yum install -y ./google-chrome-stable_current_*.rpm && \
     google-chrome --version && \
-    rm -rf *.rpm \
+    rm -rf *.rpm && \
     mkdir -p /gopath
 
 # 设置go mod proxy 国内代理
