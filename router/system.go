@@ -8,5 +8,4 @@ import (
 // 系统级通用路由
 func useSystemRouters(rg *gin.RouterGroup) {
 	rg.GET("/host", system.Host)
-	rg.GET("/healthz", system.Healthz)
 }
